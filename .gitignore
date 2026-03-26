@@ -1,0 +1,17 @@
+# Dataset (ignore completely)
+model/dataset/
+dataset/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Model (optional - decide below)
+# model/model.pkl
+
+# Env files
+.env
+venv/
+
+backend/model.pkl
+model.pkl

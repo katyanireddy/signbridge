@@ -1,0 +1,42 @@
+/* ============================================================
+   SignBridge â€“ styles.css
+   Custom styles that extend Tailwind utility classes
+   ============================================================ */
+
+/* Base font */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Smooth transition for confidence bar */
+#confidence-bar {
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.4s ease;
+}
+
+/* Hide scrollbar for history container */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ============================================================
+   Neon Glow Pulse Animation
+   Applied to the prediction letter box when a hand is detected
+   ============================================================ */
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(147, 51, 234, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(147, 51, 234, 0.8);
+    }
+}
+
+.neon-glow-active {
+    animation: pulse-glow 2s infinite;
+}
