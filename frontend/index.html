@@ -1,212 +1,1795 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SignBridge | Bridging Communication</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignBridge — Real-time Sign Language Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f4f9;
+  --surface: #ffffff;
+  --card: #f7f9fc;
+  --border: #dde4ef;
+  --border2: #bfcde0;
+  --accent: #2563eb;
+  --accent-dim: rgba(37,99,235,0.08);
+  --accent-glow: rgba(37,99,235,0.22);
+  --yellow: #d97706;
+  --blue: #3b82f6;
+  --red: #dc2626;
+  --purple: #7c3aed;
+  --orange: #ea580c;
+  --text: #0f172a;
+  --muted: #94a3b8;
+  --muted2: #475569;
+  --sans: 'Space Grotesk', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --sidebar: 260px;
+  --radius: 12px;
+  --topbar-h: 56px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+}
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    fontSize: {
-                        'xs': '0.75rem',
-                        'sm': '0.875rem',
-                        'base': '1rem',
-                        'lg': '1.125rem',
-                        'xl': '1.25rem',
-                        '2xl': '1.5rem',
-                        '3xl': '1.875rem',
-                        '4xl': '2.25rem',
-                        '8xl': '6rem',
-                    },
-                    colors: {
-                        'brand-indigo': '#4F46E5',
-                        'brand-purple': '#9333EA',
-                        'brand-cyan': '#06b6d4'
-                    }
-                }
-            }
-        }
-    </script>
+/* ── GLOBAL TOPBAR ── */
+.global-topbar {
+  width: 100%;
+  height: var(--topbar-h);
+  flex-shrink: 0;
+  background: #0f121a;
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid #1e2535;
+  padding: 0 32px 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.topbar-logo-icon {
+  width: 30px;
+  height: 30px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-glow);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+.topbar-logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #e2e8f0;
+}
+.topbar-logo-text span { color: var(--accent); }
+.topbar-divider {
+  width: 1px;
+  height: 22px;
+  background: #1e2535;
+}
+.topbar-breadcrumb {
+  font-size: 12px;
+  color: #4a5568;
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.topbar-breadcrumb span { color: #60a5fa; }
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #161c28;
+  border: 1px solid #1e2535;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: #7a8fa6;
+  font-family: var(--mono);
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
 
-    <!-- Iconify -->
-    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+/* ── APP BODY (below topbar) ── */
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
 
-    <!-- MediaPipe Hands -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+/* ── SIDEBAR ── */
+.sidebar {
+  width: var(--sidebar);
+  min-width: var(--sidebar);
+  height: 100%;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
 
-    <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
+.sidebar-section-label {
+  font-size: 9px;
+  font-family: var(--mono);
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  padding: 18px 20px 6px;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 8px 10px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+.nav-list::-webkit-scrollbar { width: 3px; }
+.nav-list::-webkit-scrollbar-track { background: transparent; }
+.nav-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+.nav-item {
+  margin-bottom: 2px;
+}
+.nav-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: #64748b;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: all 0.15s;
+  position: relative;
+}
+.nav-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.nav-btn.active {
+  background: #dbeafe;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+.nav-icon {
+  font-size: 15px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.nav-label { flex: 1; }
+.nav-badge {
+  font-size: 9px;
+  font-family: var(--mono);
+  background: #dbeafe;
+  color: #2563eb;
+  padding: 2px 6px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.nav-badge.new { background: #fef9c3; color: #a16207; }
+.nav-badge.beta { background: #dbeafe; color: #1d4ed8; }
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+}
+.innovathon-badge {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+}
+.ib-top {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 3px;
+}
+.ib-name {
+  color: #60a5fa;
+  font-weight: 600;
+  font-size: 12px;
+}
+.ib-sub {
+  color: #64748b;
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.main::-webkit-scrollbar { width: 4px; }
+.main::-webkit-scrollbar-track { background: transparent; }
+.main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── PAGE BASE ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── HOME PAGE ── */
+.home-hero {
+  padding: 56px 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.home-hero::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -100px;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  padding: 5px 12px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-glow);
+  border-radius: 20px;
+}
+.hero-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+.hero-h1 {
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 18px;
+  color: var(--text);
+}
+.hero-h1 .g { color: var(--accent); }
+.hero-h1 .y { color: var(--yellow); }
+.hero-desc {
+  font-size: 15px;
+  color: var(--muted2);
+  max-width: 540px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.hero-cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 22px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover { background: #60a5fa; transform: translateY(-1px); }
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  border-radius: 8px;
+  padding: 11px 22px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost:hover { border-color: var(--accent-glow); color: var(--accent); }
+
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  padding: 0 48px;
+  margin-bottom: 40px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.stat-val {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 4px;
+}
+.stat-lbl {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home-section-title {
+  padding: 0 48px;
+  margin-bottom: 16px;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.home-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  padding: 0 48px 48px;
+}
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.feature-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--fc-color, var(--accent)), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.feature-card:hover::before { opacity: 1; }
+.fc-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-bottom: 14px;
+  background: var(--fc-bg, var(--accent-dim));
+  border: 1px solid var(--fc-border, var(--accent-glow));
+}
+.fc-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.fc-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.fc-tag {
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: inline-block;
+}
+
+/* ── TOOL PAGES SHARED ── */
+.tool-page { padding: 32px 48px 48px; }
+.tool-header {
+  margin-bottom: 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.tool-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 5px;
+}
+.tool-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+}
+.tool-actions { display: flex; gap: 10px; align-items: center; }
+
+/* camera / demo area */
+.demo-area {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.demo-area-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.demo-area-title {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-area-dots { display: flex; gap: 5px; }
+.demo-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+.demo-body {
+  padding: 28px;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* camera placeholder */
+.cam-placeholder {
+  flex: 1;
+  min-width: 240px;
+  aspect-ratio: 4/3;
+  background: #e8edf5;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  position: relative;
+  overflow: hidden;
+}
+.cam-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 40px,
+    rgba(0,0,0,0.02) 40px,
+    rgba(0,0,0,0.02) 41px
+  );
+}
+.cam-icon { font-size: 36px; opacity: 0.3; }
+.cam-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; opacity: 0.5; }
+
+/* output panel */
+.output-panel {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.output-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.ob-label {
+  font-size: 9px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 8px;
+}
+.ob-value {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+.ob-word {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  min-height: 24px;
+}
+.conf-bar-wrap {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.conf-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.4s;
+}
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-sm {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted2);
+  transition: all 0.15s;
+}
+.btn-sm:hover { border-color: var(--accent-glow); color: var(--accent); }
+.btn-sm.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-glow); }
+
+/* info cards row */
+.info-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.info-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.ic-label { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+.ic-val { font-size: 14px; font-weight: 600; color: var(--text); }
+
+/* voice page specifics */
+.waveform {
+  flex: 1;
+  min-width: 240px;
+  aspect-ratio: 4/1.5;
+  background: #e8edf5;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 20px;
+  overflow: hidden;
+}
+.wave-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.3;
+  animation: wave 1.2s ease-in-out infinite;
+  transform-origin: bottom;
+}
+@keyframes wave {
+  0%,100% { transform: scaleY(0.2); opacity: 0.2; }
+  50% { transform: scaleY(1); opacity: 0.7; }
+}
+
+/* alphabet grid */
+.alpha-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.alpha-cell {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.alpha-cell:hover, .alpha-cell.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-glow);
+}
+.alpha-letter { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--accent); }
+.alpha-label { font-size: 9px; color: var(--muted); margin-top: 4px; }
+
+/* history table */
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--border);
+}
+.history-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted2);
+}
+.history-table tr:last-child td { border-bottom: none; }
+.history-table td:first-child { font-family: var(--mono); color: var(--accent); font-weight: 700; font-size: 16px; }
+.ht-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--mono);
+}
+
+/* settings page */
+.settings-section { margin-bottom: 32px; }
+.settings-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.setting-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.setting-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.setting-desc { font-size: 11px; color: var(--muted); }
+.toggle {
+  width: 40px; height: 22px;
+  background: var(--border2);
+  border-radius: 11px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  border: none;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(18px); }
+.setting-select {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* ISL page */
+.isl-phrase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.isl-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.isl-card:hover {
+  border-color: var(--accent-glow);
+  background: var(--accent-dim);
+}
+.isl-emoji { font-size: 28px; margin-bottom: 8px; }
+.isl-text { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.isl-hindi { font-size: 11px; color: var(--muted); }
+
+/* tech list */
+.tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tech-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--muted2);
+}
+
+/* Mobile sidebar toggle */
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: -280px;
+    height: calc(100vh - var(--topbar-h));
+    transition: left 0.3s;
+    z-index: 50;
+  }
+  .sidebar.open { left: 0; }
+  .mobile-toggle { display: flex; }
+  .tool-page { padding: 20px 20px 48px; }
+  .home-hero { padding: 32px 20px 24px; }
+  .home-stats, .feature-grid, .home-section-title { padding-left: 20px; padding-right: 20px; }
+  .demo-body { flex-direction: column; }
+  .output-panel { width: 100%; }
+  .global-topbar { padding: 0 16px; }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 </head>
-<body class="bg-slate-950 text-slate-200 min-h-screen antialiased selection:bg-brand-purple/30 selection:text-purple-200 pb-12 relative overflow-x-hidden">
+<body>
 
-    <!-- Ambient Background Glows -->
-    <div class="fixed top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-brand-indigo/20 blur-[120px] pointer-events-none z-0"></div>
-    <div class="fixed bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-brand-purple/20 blur-[120px] pointer-events-none z-0"></div>
-    <div class="fixed top-[40%] left-[50%] translate-x-[-50%] w-[40vw] h-[20vw] rounded-full bg-brand-cyan/10 blur-[100px] pointer-events-none z-0"></div>
-
-    <div class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 relative z-10">
-
-        <!-- Header Section -->
-        <header class="mb-8 p-6 sm:p-8 rounded-3xl bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center text-center relative overflow-hidden group">
-            <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-brand-purple to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-            <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3 relative z-10 text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple drop-shadow-[0_0_15px_rgba(147,51,234,0.3)]">
-                <iconify-icon icon="solar:hand-stars-linear" stroke-width="1.5" class="text-brand-purple"></iconify-icon>
-                SIGNBRIDGE
-            </h1>
-            <p class="mt-2 text-sm sm:text-base font-medium text-slate-400 tracking-tight relative z-10">Bridging Communication Through Sign Language</p>
-        </header>
-
-        <!-- Main Content Grid -->
-        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            <!-- Left Column: Webcam Feed -->
-            <section class="bg-white/5 backdrop-blur-xl rounded-3xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 flex flex-col h-full relative group hover:border-brand-indigo/30 transition-colors duration-500">
-                <!-- Camera Header -->
-                <div class="p-5 border-b border-white/10 flex justify-between items-center bg-slate-900/50 z-10">
-                    <h2 class="text-base font-semibold tracking-tight text-slate-200 flex items-center gap-2">
-                        <iconify-icon icon="solar:camera-linear" stroke-width="1.5" class="text-brand-cyan text-lg"></iconify-icon>
-                        Live Feed
-                    </h2>
-                    <span id="camera-status" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/5 text-slate-400 border border-white/10 transition-colors shadow-sm backdrop-blur-md">
-                        <span class="w-2 h-2 rounded-full bg-slate-500 animate-pulse" id="status-dot"></span>
-                        Initializing
-                    </span>
-                </div>
-
-                <!-- Video Container -->
-                <div class="relative bg-slate-950 aspect-[4/3] lg:aspect-auto lg:flex-1 w-full flex items-center justify-center overflow-hidden">
-                    <video id="webcam" class="absolute inset-0 w-full h-full object-cover transform scale-x-[-1]" autoplay="" playsinline=""></video>
-                    <canvas id="output-canvas" class="absolute inset-0 w-full h-full object-cover transform scale-x-[-1] z-10 pointer-events-none"></canvas>
-
-                    <div class="absolute inset-0 shadow-[inset_0_0_40px_rgba(2,6,23,0.8)] pointer-events-none z-10"></div>
-
-                    <!-- Overlay when starting -->
-                    <div id="camera-overlay" class="absolute inset-0 flex items-center justify-center bg-slate-950/90 z-20 transition-opacity duration-300 backdrop-blur-md">
-                        <div class="flex flex-col items-center gap-3 text-slate-200">
-                            <iconify-icon icon="solar:restart-circle-linear" class="animate-spin text-3xl text-brand-purple drop-shadow-[0_0_10px_rgba(147,51,234,0.5)]" stroke-width="1.5"></iconify-icon>
-                            <span class="text-sm font-medium tracking-tight">Requesting camera access...</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Right Column: Output Panel & Controls -->
-            <section class="flex flex-col gap-8">
-
-                <!-- Prediction Display Card -->
-                <div class="bg-white/5 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 p-8 flex flex-col items-center justify-center text-center relative overflow-hidden flex-1 min-h-[18rem] group hover:border-brand-purple/30 transition-colors duration-500">
-                    <div id="loading-indicator" class="absolute top-5 right-5 text-brand-cyan opacity-0 transition-opacity drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]">
-                        <iconify-icon icon="solar:restart-circle-linear" class="animate-spin text-xl" stroke-width="1.5"></iconify-icon>
-                    </div>
-
-                    <p class="text-xs font-semibold text-slate-400 mb-4 uppercase tracking-[0.2em]">Live Prediction</p>
-
-                    <div id="prediction-letter" class="text-8xl font-semibold tracking-tighter text-slate-600 bg-white/5 backdrop-blur-md rounded-[2.5rem] w-36 h-36 flex items-center justify-center transition-all duration-300 ring-1 ring-white/10 shadow-inner mb-8">
-                        -
-                    </div>
-
-                    <!-- Confidence Bar -->
-                    <div class="w-full max-w-[18rem] space-y-2.5">
-                        <div class="flex justify-between text-xs font-semibold">
-                            <span class="text-slate-400">Confidence Match</span>
-                            <span id="confidence-text" class="text-slate-500">0%</span>
-                        </div>
-                        <div class="h-2.5 w-full bg-slate-900/50 rounded-full overflow-hidden shadow-inner border border-white/5">
-                            <div id="confidence-bar" class="h-full bg-slate-700 rounded-full w-0 relative">
-                                <div class="absolute inset-0 bg-white/20 w-full"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p id="hand-status" class="mt-6 text-sm text-slate-500 font-medium h-5 tracking-tight">No hand detected</p>
-                </div>
-
-                <!-- Word Builder Card -->
-                <div class="bg-white/5 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 p-6 flex flex-col gap-5 relative overflow-hidden">
-                    <div class="flex justify-between items-center px-1">
-                        <h2 class="text-base font-semibold tracking-tight text-slate-200 flex items-center gap-2">
-                            <iconify-icon icon="solar:text-field-linear" stroke-width="1.5" class="text-brand-indigo text-lg drop-shadow-[0_0_8px_rgba(79,70,229,0.5)]"></iconify-icon>
-                            Word Builder
-                        </h2>
-                    </div>
-
-                    <!-- Glowing Text Output Area -->
-                    <div class="bg-slate-900/50 border border-white/10 shadow-[inset_0_2px_15px_rgba(0,0,0,0.3)] rounded-2xl p-5 min-h-[5rem] flex items-center group relative overflow-hidden transition-all focus-within:ring-2 focus-within:ring-brand-indigo/50 focus-within:border-brand-indigo/50 focus-within:shadow-[0_0_20px_rgba(79,70,229,0.2)]">
-                        <span id="built-word" class="text-3xl font-semibold tracking-tight text-white break-all empty:after:content-['Type_or_sign_to_build...'] empty:after:text-slate-600 empty:after:text-base empty:after:font-medium drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"></span>
-                    </div>
-
-                    <!-- Control Buttons -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-1">
-                        <button id="btn-add" class="flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl py-3 px-4 text-sm font-semibold hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:-translate-y-0.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none backdrop-blur-md">
-                            <iconify-icon icon="solar:add-circle-linear" stroke-width="1.5" class="text-lg"></iconify-icon>
-                            Add
-                        </button>
-                        <button id="btn-backspace" class="flex items-center justify-center gap-1.5 bg-white/5 hover:bg-orange-500/20 text-orange-400 border border-white/10 hover:border-orange-500/50 rounded-xl py-3 px-4 text-sm font-semibold hover:shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:-translate-y-0.5 transition-all active:scale-[0.98] backdrop-blur-md">
-                            <iconify-icon icon="solar:eraser-linear" stroke-width="1.5" class="text-lg"></iconify-icon>
-                            Del
-                        </button>
-                        <button id="btn-clear" class="flex items-center justify-center gap-1.5 bg-white/5 hover:bg-rose-500/20 text-rose-400 border border-white/10 hover:border-rose-500/50 rounded-xl py-3 px-4 text-sm font-semibold hover:shadow-[0_0_15px_rgba(244,63,94,0.2)] hover:-translate-y-0.5 transition-all active:scale-[0.98] backdrop-blur-md">
-                            <iconify-icon icon="solar:trash-bin-minimalistic-linear" stroke-width="1.5" class="text-lg"></iconify-icon>
-                            Clear
-                        </button>
-                        <button id="btn-speak" disabled="" class="flex items-center justify-center gap-1.5 bg-gradient-to-r from-brand-indigo to-brand-purple text-white rounded-xl py-3 px-4 text-sm font-semibold hover:shadow-[0_0_20px_rgba(147,51,234,0.5)] border border-white/10 hover:-translate-y-0.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:hover:transform-none disabled:hover:shadow-none cursor-pointer disabled:cursor-not-allowed">
-                            <iconify-icon icon="solar:volume-up-linear" class="text-lg" stroke-width="1.5"></iconify-icon>
-                            Speak
-                        </button>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Bottom Section: Session History -->
-        <section class="mt-8">
-            <div class="bg-white/5 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/10 overflow-hidden relative">
-                <div class="p-5 border-b border-white/10 bg-slate-900/30 flex justify-between items-center z-10 relative">
-                    <h2 class="text-base font-semibold tracking-tight text-slate-200 flex items-center gap-2">
-                        <iconify-icon icon="solar:history-linear" stroke-width="1.5" class="text-slate-400 text-lg"></iconify-icon>
-                        Session History
-                    </h2>
-                    <span class="text-xs text-brand-cyan font-semibold bg-brand-cyan/10 border border-brand-cyan/20 px-3 py-1 rounded-full drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">Last 10 records</span>
-                </div>
-
-                <div class="p-5 relative z-10">
-                    <div id="history-body" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
-
-                    <div id="history-empty" class="py-10 flex flex-col items-center justify-center text-slate-500 gap-3">
-                        <div class="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 mb-2 shadow-inner">
-                            <iconify-icon icon="solar:ghost-linear" class="text-2xl" stroke-width="1.5"></iconify-icon>
-                        </div>
-                        <p class="text-sm font-medium tracking-tight">No predictions recorded yet</p>
-                    </div>
-                </div>
-            </div>
-            
-        </section>
-
+<!-- GLOBAL TOPBAR — full width, always on top -->
+<header class="global-topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">🤟</div>
+      <div class="topbar-logo-text">Sign<span>Bridge</span></div>
     </div>
-    <video id="webcam" autoplay playsinline></video>
-<canvas id="output_canvas"></canvas>
+    <div class="topbar-divider"></div>
+    <div class="topbar-breadcrumb" id="global-breadcrumb">
+      <span>SignBridge</span> / Home
+    </div>
+  </div>
+  <div class="status-pill" id="global-status">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">System Ready</span>
+  </div>
+</header>
 
-<h2 id="prediction-letter"></h2>
-<h3 id="confidence-text"></h3>
+<!-- APP BODY: sidebar + main, below topbar -->
+<div class="app-body">
 
-    <!-- Application Logic -->
-    <script src="app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+  <div style="padding:20px 20px 16px;border-bottom:1px solid #e2e8f0;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <div style="width:36px;height:36px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">🤟</div>
+      <div style="font-size:18px;font-weight:700;letter-spacing:-0.02em;color:#64748b;">Sign<span style="color:#2563eb;">Bridge</span></div>
+    </div>
+    <div style="font-size:9px;font-family:var(--mono);color:#94a3b8;letter-spacing:0.12em;text-transform:uppercase;">Real-time Sign Language AI</div>
+  </div>
+  <div class="sidebar-section-label">Core Tools</div>
+    <ul class="nav-list">
+      <li class="nav-item">
+        <button class="nav-btn active" onclick="navigate('home', this)">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-label">Home</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('gesture', this)">
+          <span class="nav-icon">✋</span>
+          <span class="nav-label">Sign → Text</span>
+          <span class="nav-badge">Live</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('voice', this)">
+          <span class="nav-icon">🎙️</span>
+          <span class="nav-label">Voice Detection</span>
+          <span class="nav-badge">Live</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('alphabet', this)">
+          <span class="nav-icon">🔤</span>
+          <span class="nav-label">Alphabet Guide</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('phrases', this)">
+          <span class="nav-icon">💬</span>
+          <span class="nav-label">Common Phrases</span>
+          <span class="nav-badge new">ISL</span>
+        </button>
+      </li>
+
+      <div class="sidebar-section-label" style="padding-top:10px">Features</div>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('history', this)">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Session History</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('tutor', this)">
+          <span class="nav-icon">🎓</span>
+          <span class="nav-label">Learn Signs</span>
+          <span class="nav-badge beta">Beta</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('tts', this)">
+          <span class="nav-icon">🔊</span>
+          <span class="nav-label">Text → Speech</span>
+        </button>
+      </li>
+
+      <div class="sidebar-section-label" style="padding-top:10px">More</div>
+      <li class="nav-item">
+        <button class="nav-btn" onclick="navigate('settings', this)">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="innovathon-badge">
+        <div class="ib-top">🏆 Innovathon 2026</div>
+        <div class="ib-name">SignBridge</div>
+        <div class="ib-sub">SJB Institute of Technology</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="main">
+
+    <!-- ── HOME ── -->
+    <div id="page-home" class="page active">
+      <div class="home-hero">
+        <div class="hero-label"><div class="hero-dot"></div> Innovathon 2026 Project</div>
+        <h1 class="hero-h1">Breaking the<br><span class="g">silence</span> between<br>worlds<span class="y">.</span></h1>
+        <p class="hero-desc">Real-time sign language translation using just your webcam. No special hardware. No app to install. Built for India's 63 million deaf and hard-of-hearing people.</p>
+        <div class="hero-cta-row">
+          <button class="btn-primary" onclick="navigate('gesture', document.querySelector('.nav-btn:nth-child(2)'))">Start Translating</button>
+          <button class="btn-ghost" onclick="navigate('alphabet', document.querySelectorAll('.nav-btn')[3])">View Alphabet Guide</button>
+        </div>
+      </div>
+
+      <div class="home-stats">
+        <div class="stat-card"><div class="stat-val">63M+</div><div class="stat-lbl">People in India</div></div>
+        <div class="stat-card"><div class="stat-val">90%+</div><div class="stat-lbl">Model Accuracy</div></div>
+        <div class="stat-card"><div class="stat-val">&lt;300ms</div><div class="stat-lbl">Latency</div></div>
+        <div class="stat-card"><div class="stat-val">26</div><div class="stat-lbl">Letters Supported</div></div>
+        <div class="stat-card"><div class="stat-val">Free</div><div class="stat-lbl">Always &amp; Forever</div></div>
+      </div>
+
+      <div class="home-section-title">What you can do</div>
+      <div class="feature-grid">
+        <div class="feature-card" style="--fc-color:var(--accent);--fc-bg:var(--accent-dim);--fc-border:var(--accent-glow)" onclick="navigate('gesture', null)">
+          <div class="fc-icon">✋</div>
+          <div class="fc-title">Sign → Text Translator</div>
+          <div class="fc-desc">Hold a hand sign to your webcam and watch it convert to letters and words in real time using MediaPipe + ML.</div>
+          <div class="fc-tag">Live Camera</div>
+        </div>
+        <div class="feature-card" style="--fc-color:var(--blue);--fc-bg:rgba(96,165,250,0.1);--fc-border:rgba(96,165,250,0.25)" onclick="navigate('voice', null)">
+          <div class="fc-icon" style="background:rgba(96,165,250,0.1);border-color:rgba(96,165,250,0.25)">🎙️</div>
+          <div class="fc-title">Voice Detection</div>
+          <div class="fc-desc">Speak naturally and see your words transcribed live. Converts speech to text with browser's Web Speech API.</div>
+          <div class="fc-tag" style="background:rgba(96,165,250,0.1);color:var(--blue)">Microphone</div>
+        </div>
+        <div class="feature-card" style="--fc-color:var(--yellow);--fc-bg:rgba(250,204,21,0.08);--fc-border:rgba(250,204,21,0.2)" onclick="navigate('phrases', null)">
+          <div class="fc-icon" style="background:rgba(250,204,21,0.08);border-color:rgba(250,204,21,0.2)">💬</div>
+          <div class="fc-title">ISL Common Phrases</div>
+          <div class="fc-desc">Learn and practice the most-used Indian Sign Language phrases with visual guides and audio output.</div>
+          <div class="fc-tag" style="background:rgba(250,204,21,0.1);color:var(--yellow)">ISL Focused</div>
+        </div>
+        <div class="feature-card" style="--fc-color:var(--purple);--fc-bg:rgba(192,132,252,0.08);--fc-border:rgba(192,132,252,0.2)" onclick="navigate('tutor', null)">
+          <div class="fc-icon" style="background:rgba(192,132,252,0.08);border-color:rgba(192,132,252,0.2)">🎓</div>
+          <div class="fc-title">Interactive Tutor</div>
+          <div class="fc-desc">Practice signing letters and get real-time feedback from the AI. Great for learning at your own pace.</div>
+          <div class="fc-tag" style="background:rgba(192,132,252,0.1);color:var(--purple)">Practice Mode</div>
+        </div>
+        <div class="feature-card" style="--fc-color:var(--orange);--fc-bg:rgba(251,146,60,0.08);--fc-border:rgba(251,146,60,0.2)" onclick="navigate('tts', null)">
+          <div class="fc-icon" style="background:rgba(251,146,60,0.08);border-color:rgba(251,146,60,0.2)">🔊</div>
+          <div class="fc-title">Text → Speech</div>
+          <div class="fc-desc">Type or paste any text and speak it aloud using the Web Speech API. Useful for two-way conversation.</div>
+          <div class="fc-tag" style="background:rgba(251,146,60,0.1);color:var(--orange)">TTS Engine</div>
+        </div>
+        <div class="feature-card" style="--fc-color:var(--red);--fc-bg:rgba(248,113,113,0.08);--fc-border:rgba(248,113,113,0.2)" onclick="navigate('history', null)">
+          <div class="fc-icon" style="background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2)">📋</div>
+          <div class="fc-title">Session History</div>
+          <div class="fc-desc">Every translation is logged. Review past sessions, export data, and track your signing progress over time.</div>
+          <div class="fc-tag" style="background:rgba(248,113,113,0.1);color:var(--red)">Supabase Sync</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIGN → TEXT ── -->
+    <div id="page-gesture" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">✋ Sign Language → Text</div>
+            <div class="tool-subtitle">Hold a hand sign to your webcam · Letters appear in real time</div>
+          </div>
+          <div class="tool-actions">
+            <button class="btn-sm active" id="cam-toggle" onclick="toggleCam()">Start Camera</button>
+            <button class="btn-sm" onclick="speakWord()">🔊 Speak</button>
+            <button class="btn-sm" onclick="clearOutput()">Clear</button>
+          </div>
+        </div>
+
+        <div class="demo-area">
+          <div class="demo-area-header">
+            <div class="demo-area-title">
+              <div class="demo-area-dots">
+                <div class="demo-dot" style="background:#f87171"></div>
+                <div class="demo-dot" style="background:#facc15"></div>
+                <div class="demo-dot" style="background:#3b82f6"></div>
+              </div>
+              webcam_feed.mp4
+            </div>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--muted)" id="fps-display">MediaPipe · 0 fps</span>
+          </div>
+          <div class="demo-body">
+            <div class="cam-placeholder" id="cam-view">
+              <div class="cam-icon">📷</div>
+              <div class="cam-label">Click "Start Camera" to begin</div>
+              <video id="video-feed" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:7px" autoplay muted playsinline></video>
+              <canvas id="hand-canvas" style="display:none;position:absolute;inset:0;width:100%;height:100%;border-radius:7px;"></canvas>
+            </div>
+            <div class="output-panel">
+              <div class="output-block">
+                <div class="ob-label">Detected Letter</div>
+                <div class="ob-value" id="detected-letter">–</div>
+                <div class="conf-bar-wrap"><div class="conf-bar" id="conf-bar"></div></div>
+                <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:6px" id="conf-label">Confidence: –</div>
+              </div>
+              <div class="output-block">
+                <div class="ob-label">Building Word</div>
+                <div class="ob-word" id="current-word" style="letter-spacing:0.1em;min-height:28px">_</div>
+              </div>
+              <div class="output-block">
+                <div class="ob-label">Sentence</div>
+                <div style="font-size:12px;color:var(--muted2);min-height:40px;line-height:1.6" id="sentence-out">Words will appear here as you spell them...</div>
+              </div>
+              <div class="action-row">
+                <button class="btn-sm" onclick="addLetter()">+ Letter</button>
+                <button class="btn-sm" onclick="addSpace()">Space</button>
+                <button class="btn-sm" onclick="backspace()">⌫</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-card"><div class="ic-label">Model</div><div class="ic-val">RandomForest + MediaPipe</div></div>
+          <div class="info-card"><div class="ic-label">Input</div><div class="ic-val">21 hand landmarks</div></div>
+          <div class="info-card"><div class="ic-label">Output</div><div class="ic-val">A–Z + Space</div></div>
+          <div class="info-card"><div class="ic-label">Latency</div><div class="ic-val">&lt; 300ms</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VOICE DETECTION ── -->
+    <div id="page-voice" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">🎙️ Voice Detection</div>
+            <div class="tool-subtitle">Speak into your mic · Words are transcribed live</div>
+          </div>
+          <div class="tool-actions">
+            <button class="btn-sm active" id="mic-btn" onclick="toggleMic()">Start Listening</button>
+            <button class="btn-sm" onclick="speakTranscript()">🔊 Play Back</button>
+            <button class="btn-sm" onclick="clearTranscript()">Clear</button>
+          </div>
+        </div>
+
+        <div class="demo-area">
+          <div class="demo-area-header">
+            <div class="demo-area-title">
+              <div class="demo-area-dots">
+                <div class="demo-dot" style="background:#f87171"></div>
+                <div class="demo-dot" style="background:#facc15"></div>
+                <div class="demo-dot" style="background:#60a5fa"></div>
+              </div>
+              microphone_stream · Web Speech API
+            </div>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--muted)" id="lang-display">Language: en-IN</span>
+          </div>
+          <div class="demo-body">
+            <div class="waveform" id="waveform-display">
+              <div style="color:var(--muted);font-family:var(--mono);font-size:11px;text-align:center">
+                <div style="font-size:28px;margin-bottom:8px;opacity:0.3">🎙️</div>
+                Press "Start Listening"
+              </div>
+            </div>
+            <div class="output-panel">
+              <div class="output-block">
+                <div class="ob-label">Live Transcript</div>
+                <div style="font-size:13px;color:var(--text);min-height:60px;line-height:1.7" id="live-transcript">Your words will appear here as you speak...</div>
+              </div>
+              <div class="output-block">
+                <div class="ob-label">Full Session</div>
+                <div style="font-size:12px;color:var(--muted2);min-height:50px;line-height:1.6" id="full-transcript"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-card"><div class="ic-label">Engine</div><div class="ic-val">Web Speech API</div></div>
+          <div class="info-card"><div class="ic-label">Language</div><div class="ic-val">en-IN (Indian English)</div></div>
+          <div class="info-card"><div class="ic-label">Mode</div><div class="ic-val">Continuous Recognition</div></div>
+          <div class="info-card"><div class="ic-label">Output</div><div class="ic-val">Text + Audio Playback</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ALPHABET GUIDE ── -->
+    <div id="page-alphabet" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">🔤 Sign Alphabet Reference</div>
+            <div class="tool-subtitle">Click any letter to hear it pronounced · ASL hand shapes</div>
+          </div>
+        </div>
+        <div class="alpha-grid" id="alpha-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── ISL PHRASES ── -->
+    <div id="page-phrases" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">💬 ISL Common Phrases</div>
+            <div class="tool-subtitle">Most-used Indian Sign Language phrases · Click to hear</div>
+          </div>
+        </div>
+        <div class="isl-phrase-grid" id="phrase-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── SESSION HISTORY ── -->
+    <div id="page-history" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">📋 Session History</div>
+            <div class="tool-subtitle">All predictions logged to Supabase · Live updating</div>
+          </div>
+          <div class="tool-actions">
+            <button class="btn-sm">Export CSV</button>
+            <button class="btn-sm" onclick="clearHistory()">Clear</button>
+          </div>
+        </div>
+        <div class="demo-area">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Letter</th>
+                <th>Word Built</th>
+                <th>Confidence</th>
+                <th>Time</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody id="history-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEARN SIGNS (Tutor) ── -->
+    <div id="page-tutor" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">🎓 Interactive Sign Tutor</div>
+            <div class="tool-subtitle">Practice mode — the app tells you what to sign, you do it on camera</div>
+          </div>
+        </div>
+        <div class="tool-actions">
+  <button class="btn-sm active" id="tutor-cam-btn" onclick="toggleTutorCam()">Start Camera</button>
+</div>
+        <div class="demo-area" style="margin-bottom:20px">
+          <div class="demo-area-header">
+            <div class="demo-area-title">
+              <div class="demo-area-dots">
+                <div class="demo-dot" style="background:#c084fc"></div>
+                <div class="demo-dot" style="background:#facc15"></div>
+                <div class="demo-dot" style="background:#3b82f6"></div>
+              </div>
+              practice_session.live
+            </div>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--accent)" id="tutor-score">Score: 0 / 0</span>
+          </div>
+          <div class="demo-body" style="align-items:center">
+            <div style="flex:1;text-align:center;padding:20px">
+              <div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.12em">Sign this letter</div>
+              <div style="font-size:96px;font-family:var(--mono);font-weight:700;color:var(--accent);line-height:1" id="target-letter">A</div>
+              <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <button class="btn-sm" onclick="nextLetter()">Skip →</button>
+                <button class="btn-sm active" onclick="checkSign()">✓ Check</button>
+              </div>
+            </div>
+            <div class="cam-placeholder" id="tutor-cam-view" style="max-width:320px;flex:1;">
+  <div class="cam-icon" id="tutor-cam-icon">📷</div>
+  <div class="cam-label" id="tutor-cam-label">Click "Start Camera" to begin</div>
+  <video id="tutor-video" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:7px" autoplay muted playsinline></video>
+  <canvas id="tutor-canvas" style="display:none;position:absolute;inset:0;width:100%;height:100%;border-radius:7px;"></canvas>
+</div>
+            <div style="width:120px;text-align:center">
+              <div style="font-size:11px;font-family:var(--mono);color:var(--muted);margin-bottom:8px">Your sign</div>
+              <div style="font-size:48px;font-family:var(--mono);font-weight:700;color:var(--muted)" id="tutor-detected">–</div>
+              <div id="tutor-feedback" style="font-size:12px;margin-top:8px;color:var(--muted);min-height:20px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-card"><div class="ic-label">Mode</div><div class="ic-val">Guided Practice</div></div>
+          <div class="info-card"><div class="ic-label">Difficulty</div><div class="ic-val">Beginner → Expert</div></div>
+          <div class="info-card"><div class="ic-label">Feedback</div><div class="ic-val">Instant AI Check</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TEXT → SPEECH ── -->
+    <div id="page-tts" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">🔊 Text → Speech</div>
+            <div class="tool-subtitle">Type anything and have it spoken aloud — helps hearing people talk back</div>
+          </div>
+        </div>
+        <div class="demo-area">
+          <div class="demo-area-header">
+            <div class="demo-area-title">
+              <div class="demo-area-dots">
+                <div class="demo-dot" style="background:#fb923c"></div>
+                <div class="demo-dot" style="background:#facc15"></div>
+                <div class="demo-dot" style="background:#3b82f6"></div>
+              </div>
+              text_to_speech · Web Speech API
+            </div>
+          </div>
+          <div style="padding:24px">
+            <textarea id="tts-input" style="width:100%;background:var(--card);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:14px;padding:16px;resize:vertical;min-height:120px;outline:none;line-height:1.6" placeholder="Type something here... e.g. 'Hello, my name is Katt. I am using sign language to communicate.'"></textarea>
+            <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center">
+              <button class="btn-primary" onclick="speakTTS()">🔊 Speak</button>
+              <button class="btn-sm" onclick="stopTTS()">⏹ Stop</button>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <label style="font-size:12px;color:var(--muted);font-family:var(--mono)">Speed</label>
+                <input type="range" min="0.5" max="2" step="0.1" value="1" id="tts-rate" style="width:80px">
+                <label style="font-size:12px;color:var(--muted);font-family:var(--mono)">Pitch</label>
+                <input type="range" min="0.5" max="2" step="0.1" value="1" id="tts-pitch" style="width:80px">
+              </div>
+            </div>
+            <div style="margin-top:16px">
+              <div class="ob-label" style="margin-bottom:8px">Quick Phrases</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap" id="quick-phrases"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="page-settings" class="page">
+      <div class="tool-page">
+        <div class="tool-header">
+          <div class="tool-title-block">
+            <div class="tool-title">⚙️ Settings</div>
+            <div class="tool-subtitle">Customize your SignBridge experience</div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">Camera &amp; Detection</div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Show hand skeleton overlay</div><div class="setting-desc">Draw MediaPipe landmarks on the video feed</div></div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Smoothing buffer (frames)</div><div class="setting-desc">Higher = more stable but slower. Default: 3</div></div>
+            <select class="setting-select"><option>2</option><option selected>3</option><option>5</option><option>8</option></select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Min detection confidence</div><div class="setting-desc">Below this, no letter is shown</div></div>
+            <select class="setting-select"><option>0.5</option><option>0.6</option><option selected>0.7</option><option>0.85</option></select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">Voice &amp; Speech</div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Auto-speak on word complete</div><div class="setting-desc">Speak the word automatically after a pause</div></div>
+            <button class="toggle" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Voice language</div><div class="setting-desc">Language for TTS output</div></div>
+            <select class="setting-select"><option selected>en-IN (Indian English)</option><option>en-US</option><option>hi-IN (Hindi)</option></select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-label">Data &amp; Privacy</div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Log predictions to Supabase</div><div class="setting-desc">Required for session history feature</div></div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Save session locally</div><div class="setting-desc">Keeps history in localStorage as backup</div></div>
+            <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div><!-- end .app-body -->
+
+<button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<script>
+// ── NAVIGATION ──
+const pageMap = {
+  home:'page-home', gesture:'page-gesture', voice:'page-voice',
+  alphabet:'page-alphabet', phrases:'page-phrases', history:'page-history',
+  tutor:'page-tutor', tts:'page-tts', settings:'page-settings'
+};
+const breadcrumbMap = {
+  home:'Home', gesture:'Sign → Text Translator', voice:'Voice Detection',
+  alphabet:'Alphabet Guide', phrases:'Common Phrases (ISL)', history:'Session History',
+  tutor:'Interactive Tutor', tts:'Text → Speech', settings:'Settings'
+};
+const statusMap = {
+  home:['System Ready','var(--accent)'],
+  gesture:['Camera Ready','var(--accent)'],
+  voice:['Mic Ready','var(--blue)'],
+  alphabet:['Reference Mode','var(--muted2)'],
+  phrases:['ISL Library','var(--yellow)'],
+  history:['Synced','var(--accent)'],
+  tutor:['Practice Mode','var(--purple)'],
+  tts:['TTS Ready','var(--orange)'],
+  settings:['Config','var(--muted2)']
+};
+
+function navigate(id, btn) {
+  Object.values(pageMap).forEach(p => {
+    const el = document.getElementById(p);
+    if(el) el.classList.remove('active');
+  });
+  const target = document.getElementById(pageMap[id]);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  // update global topbar
+  document.getElementById('global-breadcrumb').innerHTML =
+    '<span>SignBridge</span> / ' + (breadcrumbMap[id] || id);
+  const [label, color] = statusMap[id] || ['Ready','var(--accent)'];
+  document.getElementById('status-text').textContent = label;
+  document.getElementById('status-dot').style.background = color;
+  document.getElementById('main').scrollTo(0,0);
+  if(window.innerWidth < 720) document.getElementById('sidebar').classList.remove('open');
+}
+
+// ── ALPHABET GUIDE ──
+const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const alphaHints = {
+  A:'Fist, thumb side', B:'4 fingers up, thumb across', C:'Curved C shape', D:'Index up, others curl',
+  E:'Bent fingers, thumb under', F:'Index + thumb make circle', G:'Index + thumb point right',
+  H:'Index + middle point right', I:'Pinky up', J:'Pinky + J motion', K:'Index + middle up, thumb between',
+  L:'L shape', M:'3 fingers over thumb', N:'2 fingers over thumb', O:'O shape', P:'K pointing down',
+  Q:'G pointing down', R:'Index + middle crossed', S:'Fist, thumb over fingers', T:'Thumb between index + middle',
+  U:'Index + middle up together', V:'V shape / peace', W:'3 fingers up', X:'Index hooked', Y:'Hang loose 🤙', Z:'Index draws Z'
+};
+
+function buildAlphaGrid() {
+  const grid = document.getElementById('alpha-grid');
+  letters.forEach(l => {
+    const cell = document.createElement('div');
+    cell.className = 'alpha-cell';
+    cell.innerHTML = `<div class="alpha-letter">${l}</div><div class="alpha-label" style="font-size:9px;margin-top:2px">${alphaHints[l]||''}</div>`;
+    cell.onclick = () => { say(l); cell.classList.add('active'); setTimeout(()=>cell.classList.remove('active'),500); };
+    grid.appendChild(cell);
+  });
+}
+buildAlphaGrid();
+
+// ── ISL PHRASES ──
+const phrases = [
+  {e:'👋','text':'Hello / Namaste','hindi':'नमस्ते'},
+  {e:'🙏','text':'Thank you','hindi':'धन्यवाद'},
+  {e:'❓','text':'What is your name?','hindi':'आपका नाम क्या है?'},
+  {e:'🤝','text':'Nice to meet you','hindi':'आपसे मिलकर अच्छा लगा'},
+  {e:'🆘','text':'Help me','hindi':'मेरी मदद करो'},
+  {e:'🏥','text':'I need a doctor','hindi':'मुझे डॉक्टर चाहिए'},
+  {e:'🚰','text':'Water please','hindi':'पानी चाहिए'},
+  {e:'🍛','text':'I am hungry','hindi':'मुझे भूख है'},
+  {e:'😊','text':'I am happy','hindi':'मैं खुश हूं'},
+  {e:'😢','text':'I am sad','hindi':'मैं दुखी हूं'},
+  {e:'✅','text':'Yes','hindi':'हाँ'},
+  {e:'❌','text':'No','hindi':'नहीं'},
+  {e:'🔄','text':'Please repeat','hindi':'कृपया दोहराएं'},
+  {e:'🐢','text':'Speak slowly','hindi':'धीरे बोलें'},
+  {e:'🏠','text':'Where is home?','hindi':'घर कहाँ है?'},
+  {e:'💰','text':'How much?','hindi':'कितना?'},
+  {e:'🕐','text':'What time?','hindi':'कितने बजे?'},
+  {e:'📞','text':'Call someone','hindi':'किसी को बुलाओ'},
+];
+function buildPhraseGrid() {
+  const grid = document.getElementById('phrase-grid');
+  phrases.forEach(p => {
+    const c = document.createElement('div');
+    c.className = 'isl-card';
+    c.innerHTML = `<div class="isl-emoji">${p.e}</div><div class="isl-text">${p.text}</div><div class="isl-hindi">${p.hindi}</div>`;
+    c.onclick = () => say(p.text);
+    grid.appendChild(c);
+  });
+}
+buildPhraseGrid();
+
+// ── TTS QUICK PHRASES ──
+const qphrases = ['Hello!','Thank you','Can you help me?','I use sign language','Please speak slowly','Call a doctor'];
+function buildQuickPhrases() {
+  const wrap = document.getElementById('quick-phrases');
+  qphrases.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'btn-sm';
+    b.textContent = p;
+    b.onclick = () => { document.getElementById('tts-input').value = p; };
+    wrap.appendChild(b);
+  });
+}
+buildQuickPhrases();
+
+// ── HISTORY TABLE ──
+const historyData = [
+  {letter:'H',word:'HI',conf:'97%',time:'Just now',type:'Sign'},
+  {letter:'I',word:'HI',conf:'93%',time:'Just now',type:'Sign'},
+  {letter:'–',word:'(space)',conf:'–',time:'1 min ago',type:'Sign'},
+  {letter:'–',word:'Hello there',conf:'–',time:'2 min ago',type:'Voice'},
+];
+function buildHistory() {
+  const tbody = document.getElementById('history-body');
+  if(!tbody) return;
+  tbody.innerHTML = historyData.map(r => `
+    <tr>
+      <td>${r.letter}</td>
+      <td style="color:var(--text);font-weight:500">${r.word}</td>
+      <td style="font-family:var(--mono);font-size:12px">${r.conf}</td>
+      <td style="font-size:12px">${r.time}</td>
+      <td><span class="ht-tag" style="background:${r.type==='Sign'?'var(--accent-dim)':'rgba(96,165,250,0.1)'};color:${r.type==='Sign'?'var(--accent)':'var(--blue)'}">${r.type}</span></td>
+    </tr>`).join('');
+}
+buildHistory();
+function clearHistory() { historyData.length=0; buildHistory(); }
+
+// ── CAMERA / GESTURE (Real MediaPipe + FastAPI) ──
+const BACKEND_URL = 'http://127.0.0.1:8000/predict';
+
+let camActive = false;
+let demoWord = '';
+let mpCamera = null;
+let hands = null;
+let lastPredictTime = 0;
+let fpsFrames = 0, fpsLast = Date.now();
+let currentLetter = '–';
+
+function toggleCam() {
+  camActive = !camActive;
+  const btn = document.getElementById('cam-toggle');
+  const video = document.getElementById('video-feed');
+  const canvas = document.getElementById('hand-canvas');
+  const placeholder = document.getElementById('cam-view');
+
+  if (camActive) {
+    btn.textContent = 'Stop Camera';
+    btn.classList.add('active');
+    startMediaPipe(video, canvas, placeholder);
+  } else {
+    btn.textContent = 'Start Camera';
+    btn.classList.remove('active');
+    if (mpCamera) { mpCamera.stop(); mpCamera = null; }
+    if (hands) { hands.close(); hands = null; }
+    if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); }
+    video.style.display = 'none';
+    canvas.style.display = 'none';
+    placeholder.querySelector('.cam-icon').style.display = '';
+    placeholder.querySelector('.cam-label').style.display = '';
+    document.getElementById('fps-display').textContent = 'MediaPipe · 0 fps';
+    document.getElementById('detected-letter').textContent = '–';
+    document.getElementById('conf-bar').style.width = '0%';
+    document.getElementById('conf-label').textContent = 'Confidence: –';
+    currentLetter = '–';
+  }
+}
+
+function startMediaPipe(video, canvas, placeholder) {
+  hands = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+  });
+
+  hands.setOptions({
+    maxNumHands: 1,
+    modelComplexity: 1,
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.5
+  });
+
+  hands.onResults(async (results) => {
+    // FPS counter
+    fpsFrames++;
+    const now = Date.now();
+    if (now - fpsLast >= 1000) {
+      document.getElementById('fps-display').textContent = `MediaPipe · ${fpsFrames} fps`;
+      fpsFrames = 0;
+      fpsLast = now;
+    }
+
+    // Draw to canvas
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth || canvas.offsetWidth;
+    canvas.height = video.videoHeight || canvas.offsetHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      const landmarks = results.multiHandLandmarks[0];
+
+      // Draw skeleton
+      drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#2563eb', lineWidth: 2 });
+      drawLandmarks(ctx, landmarks, { color: '#60a5fa', lineWidth: 1, radius: 4 });
+
+      // Throttle backend calls to ~10/sec
+      if (now - lastPredictTime > 100) {
+        lastPredictTime = now;
+        // Flatten: [x0,y0,z0, x1,y1,z1, ... x20,y20,z20] = 63 values
+        const flat = landmarks.flatMap(lm => [lm.x, lm.y]);
+        try {
+          const res = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ landmarks: flat })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentLetter = data.letter;
+            const confPct = Math.round(data.confidence * 100);
+            document.getElementById('detected-letter').textContent = data.letter;
+            document.getElementById('conf-bar').style.width = confPct + '%';
+            document.getElementById('conf-label').textContent = `Confidence: ${confPct}%`;
+            document.getElementById('tutor-detected').textContent = data.letter;
+          }
+        } catch (e) {
+          document.getElementById('fps-display').textContent = 'Backend unreachable — is FastAPI running?';
+        }
+      }
+    } else {
+      // No hand detected
+      document.getElementById('detected-letter').textContent = '–';
+      document.getElementById('conf-bar').style.width = '0%';
+      document.getElementById('conf-label').textContent = 'No hand detected';
+      currentLetter = '–';
+    }
+  });
+
+  mpCamera = new Camera(video, {
+    onFrame: async () => {
+      if (hands) await hands.send({ image: video });
+    },
+    width: 640,
+    height: 480
+  });
+
+  mpCamera.start().then(() => {
+    video.style.display = 'block';
+    canvas.style.display = 'block';
+    placeholder.querySelector('.cam-icon').style.display = 'none';
+    placeholder.querySelector('.cam-label').style.display = 'none';
+  }).catch(err => {
+    document.getElementById('fps-display').textContent = 'Camera error: ' + err.message;
+    camActive = false;
+    document.getElementById('cam-toggle').textContent = 'Start Camera';
+    document.getElementById('cam-toggle').classList.remove('active');
+  });
+}
+
+function addLetter() {
+  const l = document.getElementById('detected-letter').textContent;
+  if (l !== '–') {
+    demoWord += l;
+    document.getElementById('current-word').textContent = demoWord || '_';
+    historyData.unshift({ letter: l, word: demoWord, conf: document.getElementById('conf-label').textContent, time: 'Just now', type: 'Sign' });
+    buildHistory();
+  }
+}
+function addSpace() {
+  const sentence = document.getElementById('sentence-out');
+  const words = sentence.textContent === 'Words will appear here as you spell them...' ? '' : sentence.textContent;
+  sentence.textContent = (words + ' ' + demoWord).trim();
+  demoWord = '';
+  document.getElementById('current-word').textContent = '_';
+}
+function backspace() {
+  demoWord = demoWord.slice(0, -1);
+  document.getElementById('current-word').textContent = demoWord || '_';
+}
+function clearOutput() {
+  demoWord = '';
+  document.getElementById('current-word').textContent = '_';
+  document.getElementById('sentence-out').textContent = 'Words will appear here as you spell them...';
+}
+function speakWord() { say(demoWord || document.getElementById('sentence-out').textContent); }
+
+// ── VOICE ──
+let recognizing = false, recognition;
+function toggleMic() {
+  const btn = document.getElementById('mic-btn');
+  if(!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    document.getElementById('live-transcript').textContent = 'Speech recognition not supported in this browser. Try Chrome.';
+    return;
+  }
+  if(!recognizing) {
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'en-IN';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.onresult = e => {
+      let interim='', final='';
+      for(let i=e.resultIndex;i<e.results.length;i++) {
+        if(e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      document.getElementById('live-transcript').textContent = interim || '...listening';
+      if(final) {
+        const full = document.getElementById('full-transcript');
+        full.textContent += (full.textContent?' ':'')+final;
+      }
+    };
+    recognition.onerror = e => { document.getElementById('live-transcript').textContent = 'Error: '+e.error; };
+    recognition.start();
+    recognizing = true;
+    btn.textContent = 'Stop Listening';
+    btn.classList.add('active');
+    buildWaveform();
+  } else {
+    recognition.stop();
+    recognizing = false;
+    btn.textContent = 'Start Listening';
+    btn.classList.remove('active');
+    document.getElementById('waveform-display').innerHTML = '<div style="color:var(--muted);font-family:var(--mono);font-size:11px;text-align:center"><div style="font-size:28px;margin-bottom:8px;opacity:0.3">🎙️</div>Stopped</div>';
+  }
+}
+function buildWaveform() {
+  const wf = document.getElementById('waveform-display');
+  wf.innerHTML = '';
+  for(let i=0;i<40;i++) {
+    const b = document.createElement('div');
+    b.className = 'wave-bar';
+    b.style.height = (15+Math.random()*30)+'px';
+    b.style.animationDelay = (Math.random()*1.2)+'s';
+    b.style.animationDuration = (0.8+Math.random()*0.8)+'s';
+    wf.appendChild(b);
+  }
+}
+function speakTranscript() { say(document.getElementById('full-transcript').textContent); }
+function clearTranscript() {
+  document.getElementById('live-transcript').textContent = 'Your words will appear here as you speak...';
+  document.getElementById('full-transcript').textContent = '';
+}
+
+// ── TTS PAGE ──
+function speakTTS() {
+  const text = document.getElementById('tts-input').value;
+  if(!text) return;
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = parseFloat(document.getElementById('tts-rate').value);
+  utt.pitch = parseFloat(document.getElementById('tts-pitch').value);
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utt);
+}
+function stopTTS() { speechSynthesis.cancel(); }
+let tutorCamActive = false, tutorMpCamera = null, tutorHands = null;
+
+function toggleTutorCam() {
+  tutorCamActive = !tutorCamActive;
+  const btn = document.getElementById('tutor-cam-btn');
+  const video = document.getElementById('tutor-video');
+  const canvas = document.getElementById('tutor-canvas');
+  const icon = document.getElementById('tutor-cam-icon');
+  const label = document.getElementById('tutor-cam-label');
+
+  if (tutorCamActive) {
+    btn.textContent = 'Stop Camera';
+    tutorHands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+    tutorHands.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.7, minTrackingConfidence:0.5 });
+    let lastCall = 0;
+    tutorHands.onResults(async (results) => {
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth || canvas.offsetWidth;
+      canvas.height = video.videoHeight || canvas.offsetHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (results.multiHandLandmarks?.length > 0) {
+        const lms = results.multiHandLandmarks[0];
+        drawConnectors(ctx, lms, HAND_CONNECTIONS, { color:'#2563eb', lineWidth:2 });
+        drawLandmarks(ctx, lms, { color:'#60a5fa', lineWidth:1, radius:4 });
+        const now = Date.now();
+        if (now - lastCall > 100) {
+          lastCall = now;
+          const flat = lms.flatMap(lm => [lm.x, lm.y]);
+          try {
+            const res = await fetch('http://127.0.0.1:8000/predict', {
+              method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ landmarks: flat })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              document.getElementById('tutor-detected').textContent = data.letter;
+              document.getElementById('tutor-detected').style.color = 'var(--accent)';
+            }
+          } catch(e) {}
+        }
+      } else {
+        document.getElementById('tutor-detected').textContent = '–';
+      }
+    });
+    tutorMpCamera = new Camera(video, {
+      onFrame: async () => { if(tutorHands) await tutorHands.send({ image: video }); },
+      width:640, height:480
+    });
+    tutorMpCamera.start().then(() => {
+      video.style.display = 'block'; canvas.style.display = 'block';
+      icon.style.display = 'none'; label.style.display = 'none';
+    });
+  } else {
+    btn.textContent = 'Start Camera';
+    if(tutorMpCamera) { tutorMpCamera.stop(); tutorMpCamera = null; }
+    if(tutorHands) { tutorHands.close(); tutorHands = null; }
+    if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+    video.style.display = 'none'; canvas.style.display = 'none';
+    icon.style.display = ''; label.style.display = '';
+    document.getElementById('tutor-detected').textContent = '–';
+  }
+}
+// ── TUTOR ──
+
+const tutorLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+let tutorIdx = 0, tutorScore = 0, tutorTotal = 0;
+function nextLetter() {
+  tutorIdx = (tutorIdx+1) % tutorLetters.length;
+  document.getElementById('target-letter').textContent = tutorLetters[tutorIdx];
+  document.getElementById('tutor-feedback').textContent = '';
+  document.getElementById('tutor-feedback').style.color = '';
+}
+function checkSign() {
+  const detected = document.getElementById('tutor-detected').textContent;
+  const target = document.getElementById('target-letter').textContent;
+  tutorTotal++;
+  if(detected === target) {
+    tutorScore++;
+    document.getElementById('tutor-feedback').textContent = '✓ Correct!';
+    document.getElementById('tutor-feedback').style.color = 'var(--accent)';
+    setTimeout(nextLetter, 700);
+  } else {
+    document.getElementById('tutor-feedback').textContent = `✗ Got ${detected}`;
+    document.getElementById('tutor-feedback').style.color = 'var(--red)';
+  }
+  document.getElementById('tutor-score').textContent = `Score: ${tutorScore} / ${tutorTotal}`;
+}
+
+// ── SPEECH HELPER ──
+function say(text) {
+  if(!text || text==='–') return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+</script>
 </body>
 </html>

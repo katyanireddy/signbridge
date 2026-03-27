@@ -1,37 +1,9 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
-import pickle
+from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
+import pickle
 
 app = FastAPI()
-
-# Load model
-model = pickle.load(open("model.pkl", "rb"))
-
-# Input format
-class InputData(BaseModel):
-    data: list
-
-@app.get("/")
-def home():
-    return {"message": "SignBridge Backend Running 🚀"}
-
-@app.post("/predict")
-def predict(input_data: InputData):
-    try:
-        features = np.array(input_data.data).reshape(1, -1)
-
-        prediction = model.predict(features)[0]
-
-        return {
-            "letter": str(prediction),
-            "confidence": 0.95   # placeholder (can improve later)
-        }
-
-    except Exception as e:
-        return {"error": str(e)}
-    
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,3 +12,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+model = pickle.load(open("model.pkl", "rb"))
+labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+@app.post("/predict")
+async def predict(data: dict):
+    landmarks = data["landmarks"]
+
+    X = np.array(landmarks).reshape(1, -1)
+
+    probs = model.predict_proba(X)[0]
+    pred = np.argmax(probs)
+
+    return {
+        "letter": labels[pred],
+        "confidence": float(probs[pred])
+    }
+
+@app.get("/")
+def home():
+    return {"message": "Backend is running 🚀"}
