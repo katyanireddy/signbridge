@@ -5,16 +5,10 @@ import pickle
 import requests
 import os
 
-app = FastAPI()
-from fastapi import Response
 
-@app.options("/predict")
-async def options_predict():
-    response = Response()
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
+app = FastAPI()
+
+# ✅ CORS (ONLY THIS NEEDED)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
