@@ -5,7 +5,7 @@ import pickle
 import requests
 import os
 
-
+print("NEW DEPLOY 🚀")
 app = FastAPI()
 
 # ✅ CORS (ONLY THIS NEEDED)
