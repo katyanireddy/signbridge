@@ -1,7 +1,13 @@
+
+
+
+#model = pickle.load(open("model.pkl", "rb"))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 import pickle
+import requests
+import os
 
 app = FastAPI()
 
@@ -13,18 +19,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#model = pickle.load(open("model.pkl", "rb"))
-import requests
+# 🔥 DOWNLOAD MODEL IF NOT PRESENT
+MODEL_PATH = "model.pkl"
 
-url = "https://drive.google.com/uc?id=1RjLFTrL1jMsne4b3xkOFvdAdjUsAWy5K"
-r = requests.get(url)
+if not os.path.exists(MODEL_PATH):
+    print("⬇️ Downloading model...")
+    url = "https://drive.google.com/uc?export=download&id=1RjLFTrL1jMsne4b3xkOFvdAdjUsAWy5K"
+    r = requests.get(url)
+    with open(MODEL_PATH, "wb") as f:
+        f.write(r.content)
+    print("✅ Model downloaded")
 
-with open("model.pkl", "wb") as f:
-    f.write(r.content)
+# Load model
+model = pickle.load(open(MODEL_PATH, "rb"))
+labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-model = pickle.load(open("model.pkl", "rb"))
+
+@app.get("/")
+def home():
+    return {"message": "Backend running 🚀"}
 
 
+@app.post("/predict")
+async def predict(data: dict):
+    landmarks = data["landmarks"]
+
+    X = np.array(landmarks).reshape(1, -1)
+
+    probs = model.predict_proba(X)[0]
+    pred = np.argmax(probs)
+
+    return {
+        "letter": labels[pred],
+        "confidence": float(probs[pred])
+    }
 labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 @app.post("/predict")
