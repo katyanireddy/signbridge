@@ -13,7 +13,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#model = pickle.load(open("model.pkl", "rb"))
+import requests
+
+url = "https://drive.google.com/uc?id=1RjLFTrL1jMsne4b3xkOFvdAdjUsAWy5K"
+r = requests.get(url)
+
+with open("model.pkl", "wb") as f:
+    f.write(r.content)
+
 model = pickle.load(open("model.pkl", "rb"))
+
+
 labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 @app.post("/predict")
