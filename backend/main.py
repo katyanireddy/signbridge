@@ -1,7 +1,3 @@
-
-
-
-#model = pickle.load(open("model.pkl", "rb"))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
@@ -10,6 +6,11 @@ import requests
 import os
 
 app = FastAPI()
+from fastapi import Request
+
+@app.options("/predict")
+async def options_predict(request: Request):
+    return {"message": "OK"}
 
 app.add_middleware(
     CORSMiddleware,
