@@ -21,13 +21,16 @@ app.add_middleware(
 
 # 🔥 DOWNLOAD MODEL IF NOT PRESENT
 MODEL_PATH = "model.pkl"
-
+if os.path.exists("model.pkl"):
+    os.remove("model.pkl")
 if not os.path.exists(MODEL_PATH):
     print("⬇️ Downloading model...")
     url = "https://drive.google.com/uc?export=download&id=1RjLFTrL1jMsne4b3xkOFvdAdjUsAWy5K"
-    r = requests.get(url)
+    r = requests.get(url, stream=True)
     with open(MODEL_PATH, "wb") as f:
-        f.write(r.content)
+        for chunk in r.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
     print("✅ Model downloaded")
 
 # Load model
