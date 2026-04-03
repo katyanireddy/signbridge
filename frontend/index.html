@@ -1551,7 +1551,7 @@ function startMediaPipe(video, canvas, placeholder) {
         // Flatten: [x0,y0,z0, x1,y1,z1, ... x20,y20,z20] = 63 values
         const flat = landmarks.flatMap(lm => [lm.x, lm.y]);
         try {
-          const res = await fetch(BACKEND_URL, {
+          const res = await fetch("https://signbridge-production.up.railway.app/predict", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ landmarks: flat })
@@ -1723,10 +1723,13 @@ function toggleTutorCam() {
           lastCall = now;
           const flat = lms.flatMap(lm => [lm.x, lm.y]);
           try {
-            const res = await fetch('http://127.0.0.1:8000/predict', {
-              method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ landmarks: flat })
-            });
+            const res = await fetch("https://signbridge-production.up.railway.app/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+  body: JSON.stringify({ landmarks: flat })
+});
             if (res.ok) {
               const data = await res.json();
               document.getElementById('tutor-detected').textContent = data.letter;
