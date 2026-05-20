@@ -19,12 +19,19 @@ app.add_middleware(
 
 # 🔥 DOWNLOAD MODEL IF NOT PRESENT
 MODEL_PATH = "model.pkl"
-if os.path.exists("model.pkl"):
-    os.remove("model.pkl")
+# if os.path.exists("model.pkl"):
+#     os.remove("model.pkl")
+try:
+    model = pickle.load(open(MODEL_PATH, "rb"))
+    print("✅ Model loaded")
+except Exception as e:
+    print("❌ Model load failed:", e)
 if not os.path.exists(MODEL_PATH):
     print("⬇️ Downloading model...")
     url = "https://www.dropbox.com/scl/fi/6gfshx5eg2y60kxpxcjzt/model.pkl?rlkey=kw7w7es6nsi6h509wtrvr1360&st=6qchtc6x&dl=1"
     r = requests.get(url, stream=True)
+    print(r.status_code)
+    print(r.headers.get("content-type"))    
     with open(MODEL_PATH, "wb") as f:
         for chunk in r.iter_content(chunk_size=8192):
             if chunk:
