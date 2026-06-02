@@ -40,13 +40,7 @@ if not os.path.exists(MODEL_PATH):
 
 # Load model
 model = pickle.load(open(MODEL_PATH, "rb"))
-labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-
-@app.get("/")
-def home():
-    return {"message": "Backend running 🚀"}
-
+labels = list("ABCDEFGHIKLMNOPQRSTUVWXYZ")
 
 @app.post("/predict")
 async def predict(data: dict):
@@ -57,24 +51,17 @@ async def predict(data: dict):
     probs = model.predict_proba(X)[0]
     pred = np.argmax(probs)
 
-    return {
-        "letter": labels[pred],
-        "confidence": float(probs[pred])
-    }
-labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    confidence = float(probs[pred])
 
-@app.post("/predict")
-async def predict(data: dict):
-    landmarks = data["landmarks"]
-
-    X = np.array(landmarks).reshape(1, -1)
-
-    probs = model.predict_proba(X)[0]
-    pred = np.argmax(probs)
+    if confidence < 0.35:
+        return {
+            "letter": "-",
+            "confidence": confidence
+        }
 
     return {
         "letter": labels[pred],
-        "confidence": float(probs[pred])
+        "confidence": confidence
     }
 
 @app.get("/")
